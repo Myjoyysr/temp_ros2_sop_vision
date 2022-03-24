@@ -1,2 +1,2 @@
 colcon build\
-ros2 launch vision2.launch.test.py
+ros2 launch vision2.test.launch.py
