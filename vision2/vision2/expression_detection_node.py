@@ -9,7 +9,8 @@ from ament_index_python.packages import get_package_share_directory
 
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
-from face_tracker_msgs.msg import Faces, Face, Point2
+
+from vision2_msgs.msg import Faces, Face, Point2
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array
 

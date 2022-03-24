@@ -7,8 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 
-#need to get vision2_msgs working -> need to include FaceImg and FaceImgs
-from vision2_msgs.msg import Faces, Face, Point2
+from vision2_msgs.msg import Faces, Face, Point2, FaceImage, FaceImages
 
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -17,6 +16,7 @@ bridge = CvBridge()
 # using haarcascade
 face_cascade_name = cv2.CascadeClassifier(
     cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
 
 class Vision2(Node):
 
@@ -47,6 +47,14 @@ class Vision2(Node):
             .string_value
         )
 
+        # For faceimg array
+        faces_image_topic = (
+            self.declare_parameter(
+                "faces_image_topic", "faces_image"
+            )
+            .get_parameter_value()
+            .string_value
+        )
         # For face coordinates for object tracker
         # todo -> create vision2_msgs and give 42x42 face pictures
         # with coordinates to expression_tracker_node
@@ -65,7 +73,8 @@ class Vision2(Node):
         self.face_img_publisher = self.create_publisher(
             Image, face_image_topic, 10)
 
-        #self.faces_img_publisher = self.create_publisher(FaceImages, "face_images", 10)
+        self.faces_img_publisher = self.create_publisher(
+            FaceImages, "face_images", 10)
 
     def detect_face(self, img: Image):
         try:
@@ -78,6 +87,8 @@ class Vision2(Node):
 
             # Array for coordinate messages
             msg_faces = []
+            # Array for face images
+            msg_face_imgs = []
 
             # Rotate every face from the picture
             # Todo: create also 48x48 picture from face and
@@ -87,7 +98,7 @@ class Vision2(Node):
 
                 # Lines for getting face
 
-                #new_face = cv2_bgr_img[y:y + h, x:x + w]
+                new_face = cv2_bgr_img[y1:y1 + h, x1:x1 + w]
                 #new_face2 = cv2_gray_img[y:y + h, x:x + w]
                 # faces_array.append(new_face)
 
@@ -103,6 +114,11 @@ class Vision2(Node):
                 # add face coordinates to msg array
                 msg_faces.append(msg_face)
 
+                # add faceimg to msg
+                msg_face_img =  FaceImage(face_image = (bridge.cv2_to_imgmsg(new_face, "bgr8")))
+
+                # add img to array
+                msg_face_imgs.append(msg_face_img)
 
             # publish coordinate messages
             self.face_publisher.publish(Faces(faces=msg_faces))
@@ -111,8 +127,11 @@ class Vision2(Node):
             self.face_img_publisher.publish(
                 bridge.cv2_to_imgmsg(cv2_bgr_img, "bgr8"))
 
+            #self.face_img_publisher.publish(
+                #bridge.cv2_to_imgmsg(new_face, "bgr8"))
+
             # img array publisher for expression detection
-            # self.faces_img_publisher.publish(FaceImages(faces_array_msg))
+            self.faces_img_publisher.publish(FaceImages(face_images=msg_face_imgs,face_info=msg_faces))
 
         except:
             print("error")
