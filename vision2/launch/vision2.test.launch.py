@@ -20,7 +20,7 @@ def generate_launch_description():
     vision_node = Node(
         package="vision2",
         executable="vision2_node",
-        namespace="vision2",
+        #namespace="vision2",
         parameters=[
             {
                 #"classifier": "fer_2013.h5",
@@ -29,4 +29,17 @@ def generate_launch_description():
         ],
     )
 
-    return LaunchDescription([vision_node, camera_node])
+    object_tracker_node = Node(
+        package="vision2",
+        executable="object_tracker_node",
+        #namespace="vision2",
+        parameters=[
+            {
+                #"classifier": "fer_2013.h5",
+                "image_topic": "/image_raw",
+            }
+        ],
+    )
+
+
+    return LaunchDescription([vision_node, object_tracker_node, camera_node])

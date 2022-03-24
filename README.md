@@ -1,1 +1,2 @@
-"# temp_ros2_sop_vision" 
+colcon build\
+ros2 launch vision2.launch.test.py

@@ -6,7 +6,10 @@ import cv2
 
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
+
 from face_tracker_msgs.msg import Faces, Face, Point2
+#from vision2_msgs.msg import Faces, Face, Point2
+
 from cv_bridge import CvBridge, CvBridgeError
 import message_filters
 
@@ -15,9 +18,8 @@ bridge = CvBridge()
 # init tracker list
 # there should be some better way with services
 trackers = []
-# need to fix ids when message service is done
+# need to fix ids when there is vision2_msgs
 ids = []
-
 
 class ObjectTracker(Node):
 
@@ -36,8 +38,9 @@ class ObjectTracker(Node):
         self.faces_sub = message_filters.Subscriber(
             self,
             Faces,
-            "face_tracker/faces",
+            #"face_tracker/faces",
             #"vision2/faces", #for vision2 tracking when its done
+            "/faces", #when not using namespaces
         )
         # for raw img feed (could use also face feature coordinates
         # if we take that approach)
@@ -159,6 +162,7 @@ class ObjectTracker(Node):
         # print(cv2_bgr_img.shape)
 
         # we publish img for vizualisation
+
         self.face_img_publisher.publish(
             bridge.cv2_to_imgmsg(cv2_bgr_img, "bgr8"))
 
