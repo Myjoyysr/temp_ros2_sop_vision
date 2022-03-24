@@ -7,8 +7,8 @@ import cv2
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 
-from face_tracker_msgs.msg import Faces, Face, Point2
-#from vision2_msgs.msg import Faces, Face, Point2
+#from face_tracker_msgs.msg import Faces, Face, Point2
+from vision2_msgs.msg import Faces, Face, Point2
 
 from cv_bridge import CvBridge, CvBridgeError
 import message_filters
