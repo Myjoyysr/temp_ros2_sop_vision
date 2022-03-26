@@ -50,7 +50,7 @@ class Vision2(Node):
         # For faceimg array
         faces_image_topic = (
             self.declare_parameter(
-                "faces_image_topic", "faces_image"
+                "faces_image_topic", "faces_image_array"
             )
             .get_parameter_value()
             .string_value
@@ -73,8 +73,9 @@ class Vision2(Node):
         self.face_img_publisher = self.create_publisher(
             Image, face_image_topic, 10)
 
+        # publish face images for expression detection node
         self.faces_img_publisher = self.create_publisher(
-            FaceImages, "face_images", 10)
+            FaceImages, faces_image_topic, 10)
 
     def detect_face(self, img: Image):
         try:
@@ -99,14 +100,12 @@ class Vision2(Node):
                 # Lines for getting face
 
                 new_face = cv2_bgr_img[y1:y1 + h, x1:x1 + w]
-                #new_face2 = cv2_gray_img[y:y + h, x:x + w]
-                # faces_array.append(new_face)
 
                 # For visualization draw a box around the face in original picture
                 cv2.rectangle(cv2_bgr_img, (x1, y1), (x1+w, y1+h), (0, 0, 255), 2)
 
                 # resize picture for classifier
-                #for_classifier = cv2.resize(new_face2, (48, 48))
+                new_face = cv2.resize(new_face, (48, 48))
 
                 # add coordinates to message for object tracker
                 msg_face = Face(top_left=Point2(x=int(x1), y=int(y1)),

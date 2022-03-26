@@ -20,6 +20,7 @@ trackers = []
 # need to fix ids when there is vision2_msgs
 ids = []
 
+
 class ObjectTracker(Node):
 
     def __init__(self):
@@ -37,9 +38,9 @@ class ObjectTracker(Node):
         self.faces_sub = message_filters.Subscriber(
             self,
             Faces,
-            #"face_tracker/faces",
-            #"vision2/faces", #for vision2 tracking when its done
-            "/faces", #when not using namespaces
+            # "face_tracker/faces",
+            # "vision2/faces", #for vision2 tracking when its done
+            "/faces",  # when not using namespaces
         )
         # for raw img feed (could use also face feature coordinates
         # if we take that approach)
@@ -48,18 +49,31 @@ class ObjectTracker(Node):
             Image,
             "/image_raw",
         )
+        # for face tracker id + coordinates publisher
+        faces_id_topic = (
+            self.declare_parameter(
+                "face_topic", "face_ids"
+            )
+            .get_parameter_value()
+            .string_value
+        )
+
         # need image + coordinates msgs for tracking
         # need to add msg.header.stamp = node.get_clock().now() to face topic to avoid
         # headerless messages.
         self.sync = message_filters.ApproximateTimeSynchronizer(
-            (self.faces_sub, self.image_sub), 1, 0.1, allow_headerless=True)
+            (self.faces_sub, self.image_sub), 4, 0.1, allow_headerless=True)
         #
         self.sync.registerCallback(self.track_object)
         # visualize tracking
         self.face_img_publisher = self.create_publisher(
             Image, object_tracker_image_topic, 10)
+        # coordinates + tracker ids
+        self.face_id_publisher = self.create_publisher(
+            Faces, faces_id_topic, 10)
 
     # Handles tracking
+
     def track_object(self, faces_msg, img_msg):
         # convert msg to image
         cv2_bgr_img = bridge.imgmsg_to_cv2(img_msg, "bgr8")
@@ -77,6 +91,7 @@ class ObjectTracker(Node):
             faces.append((msg))
         # init array for index numbers
         trackers_delete = []
+        faces_ids_msg = []
         i = 0
         try:
             # loop every tracker
@@ -102,14 +117,21 @@ class ObjectTracker(Node):
                     # also include id of tracker as identification
                     cv2.putText(cv2_bgr_img, ("ID: " + str(ids[trackers.index(tracker)])),
                                 (t_x, t_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            # last we pop unwanted trackers
+
+                    # create coord msg with tracker id
+                    face_id_msg = Face(top_left=Point2(x=int(t_x), y=int(t_y)), bottom_right=Point2(
+                        x=int(t_x+t_w), y=int(t_y+t_h)), id=int((ids[trackers.index(tracker)])))
+                    # append msg list
+                    faces_ids_msg.append(face_id_msg)
+
+                # last we pop unwanted trackers
             for index_to_remove in trackers_delete:
                 trackers.pop(index_to_remove-i)
                 ids.pop(index_to_remove-i)
                 i = i+1
         except:
             print("error")
-        #first we check if we have any new faces to track
+        # first we check if we have any new faces to track
         if len(faces) > len(trackers):
             # loop every face coordinate
             for face in faces:
@@ -152,18 +174,19 @@ class ObjectTracker(Node):
                     tracker.start_track(cv2_bgr_img, dlib.rectangle(
                         topleft_x-10, topleft_y-30, bottomright_x+5, bottomright_y+5))
                     # we append our trakcer list
-                    
+
                     trackers.append(tracker)
-                    if(len(ids)==0):
+                    if(len(ids) == 0):
                         ids.append(1)
                     else:
                         ids.append(ids[len(ids)-1]+1)
         # print(cv2_bgr_img.shape)
 
         # we publish img for vizualisation
-
         self.face_img_publisher.publish(
             bridge.cv2_to_imgmsg(cv2_bgr_img, "bgr8"))
+
+        self.face_id_publisher.publish(Faces(faces=faces_ids_msg))
 
         # todo: we need to info as msg and also handle vizualisation elsewhere
         # where we also include data from other nodes.
