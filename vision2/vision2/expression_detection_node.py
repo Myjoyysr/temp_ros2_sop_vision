@@ -21,7 +21,8 @@ bridge = CvBridge()
 
 # Need to fix everything here after vision2_msgs are working
 
-class Vision(Node):
+
+class ExpressionDetection(Node):
 
     def __init__(self):
         super().__init__('vision')
@@ -44,13 +45,13 @@ class Vision(Node):
         self.faces_sub = message_filters.Subscriber(
             self,
             FaceImages,
-            "/faces", #when not using namespaces
+            "/faces_image_array",  # when not using namespaces
         )
         # for recieving face coords with tracker ids
         self.image_sub = message_filters.Subscriber(
             self,
-            Image,
-            "/image_raw",
+            Faces,
+            "/face_ids",
         )
 
         self.sync = message_filters.ApproximateTimeSynchronizer(
@@ -58,81 +59,71 @@ class Vision(Node):
 
         self.sync.registerCallback(self.detect_expression)
 
-    def detect_expression(self, msg_ids, msg_face_imgs):
-        try:
-            #todo: handle msgs, detect expressions, send coords, expression, id array to next step (ai and vizualisation_node)
+    def detect_expression(self, msg_face_imgs,msg_ids):
+        #try:
+            # todo: handle msgs, detect expressions, send coords, expression, id array to next step (ai and vizualisation_node)
 
+            # get face images
+            msg_images = msg_face_imgs.face_images
+            # get face info
+            msg_face_info = msg_face_imgs.face_info
+            # init array for face images
+            faces_img_array = []
 
+            # get face images to array
+            for img in msg_images:
+                #print(img)
+                faces_img_array.append(bridge.imgmsg_to_cv2(img.face_image, "mono8"))
+            
+            # init array for face info
+            face_info_array = []
 
+            # get face info to array
+            for info in msg_face_info:
+                face_info_array.append(((info.top_left.x, info.top_left.y),
+                         (info.bottom_right.x, info.bottom_right.y)))
+            
+            # 
 
+            print(face_info_array)
+            msg_faces_details = []
 
-            cv2_bgr_img = bridge.imgmsg_to_cv2(img, "bgr8")
-            cv2_gray_img = bridge.imgmsg_to_cv2(img, "mono8")
+            for face in faces_img_array:
 
+                temp = img_to_array(face)
+                temp = numpy.expand_dims(temp, axis=0)
 
-            faces_array = []
-            i = 0
-
-            for x, y, w, h in face:
-
-                new_face = cv2_bgr_img[y:y + h, x:x + w] 
-                new_face2 = cv2_gray_img[y:y + h, x:x + w]
-                faces_array.append(new_face)
-
-                cv2.rectangle(cv2_bgr_img, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                temp = cv2.resize(new_face2, (48, 48))
-
-                pixels = img_to_array(temp)
-                pixels = numpy.expand_dims(pixels, axis=0)
-
-                predictions = self.classifier.predict(pixels)
+                predictions = self.classifier.predict(temp)
 
                 index = numpy.argmax(predictions[0])
-                print(predictions)
                 emotions = ("Angry", "Disgust", "Fear", "Happy",
                             "Neutral", "Sad", "Surprised")
 
                 predicted_emotion = emotions[index]
-
-                cv2.putText(faces_array[i], predicted_emotion, (int(20), int(
-                    20)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                 print(predicted_emotion)
-                faces_array[i] = faces_array[i]
-                i = i+1
+                #face_info_array[int(faces_img_array.index(face))]
+                #msg_face_details = Face(top_left=Point2(x=int(x1), y=int(y1)),
+                                #bottom_right=Point2(x=int(x1+w), y=int(y1+h)))
 
-            #blank_image = numpy.zeros((480,640,3), numpy.uint8)
-            dim = (96, 128)
-            i = 1
-            x_offset = 0
-            y_offset = 0
-            for face in faces_array:
-                fixed = cv2.resize(face, dim)
+                #need to build messages + include ids
 
-                cv2_bgr_img[y_offset:y_offset+fixed.shape[0],
-                            x_offset:x_offset+fixed.shape[1]] = fixed
-                # print(i)
-                i = i+1
-                x_offset = x_offset + 96
-                if x_offset > 512:
-                    y_offset = y_offset+128
-                    x_offset = 0
 
-            self.face_img_publisher.publish(
-                bridge.cv2_to_imgmsg(cv2_bgr_img, "bgr8"))
+
+
             #self.face_img_publisher.publish(bridge.cv2_to_imgmsg(blank_image, "bgr8"))
 
-        except:
-            print("error")
+        #except:
+           # print("error")
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    visions = Vision()
+    expression_detection = ExpressionDetection()
 
-    rclpy.spin(visions)
+    rclpy.spin(expression_detection)
 
-    visions.destroy_node()
+    expression_detection.destroy_node()
     rclpy.shutdown()
 
 

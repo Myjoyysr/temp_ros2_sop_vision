@@ -102,7 +102,8 @@ class Vision2(Node):
                 new_face = cv2_bgr_img[y1:y1 + h, x1:x1 + w]
 
                 # For visualization draw a box around the face in original picture
-                cv2.rectangle(cv2_bgr_img, (x1, y1), (x1+w, y1+h), (0, 0, 255), 2)
+                cv2.rectangle(cv2_bgr_img, (x1, y1),
+                              (x1+w, y1+h), (0, 0, 255), 2)
 
                 # resize picture for classifier
                 new_face = cv2.resize(new_face, (48, 48))
@@ -114,7 +115,8 @@ class Vision2(Node):
                 msg_faces.append(msg_face)
 
                 # add faceimg to msg
-                msg_face_img =  FaceImage(face_image = (bridge.cv2_to_imgmsg(new_face, "bgr8")))
+                msg_face_img = FaceImage(face_image=(
+                    bridge.cv2_to_imgmsg(new_face, "bgr8")))
 
                 # add img to array
                 msg_face_imgs.append(msg_face_img)
@@ -126,11 +128,12 @@ class Vision2(Node):
             self.face_img_publisher.publish(
                 bridge.cv2_to_imgmsg(cv2_bgr_img, "bgr8"))
 
-            #self.face_img_publisher.publish(
-                #bridge.cv2_to_imgmsg(new_face, "bgr8"))
+            # self.face_img_publisher.publish(
+            # bridge.cv2_to_imgmsg(new_face, "bgr8"))
 
             # img array publisher for expression detection
-            self.faces_img_publisher.publish(FaceImages(face_images=msg_face_imgs,face_info=msg_faces))
+            self.faces_img_publisher.publish(FaceImages(
+                face_images=msg_face_imgs, face_info=msg_faces))
 
         except:
             print("error")
