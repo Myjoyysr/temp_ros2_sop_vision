@@ -26,14 +26,36 @@ class Vision2ActionMsgs(Node):
 
     def handle_action_msgs(self, faces_details):
         # todo... 
-        # parse message (face_details)...
-        # Calculate closest person
         # calculate projected goal position based on expression.. 
         # happy look towards? neutral reset position? angry -> lookaway?
         # goal is https://docs.ros2.org/foxy/api/trajectory_msgs/msg/JointTrajectoryPoint.html "positions"
-        # print(faces_details)
 
-        goal = [0.5, 0.0, 0.0, 0.0]
+        # Need to check if server is available, not spam...
+
+        msg1 = faces_details.faces
+        print(" ")
+        print(faces_details)
+        box_h = 0
+        msg2 = msg1
+        for face in msg1:
+            if not msg2:
+                msg2 = face
+                box_h = ((face.top_left.x-face.bottom_right.x)**2 +(face.top_left.x-face.bottom_right.x)**2)**0.5
+                print(box_h)
+            else:
+                if box_h < ((face.top_left.x-face.bottom_right.x)**2 +(face.top_left.x-face.bottom_right.x)**2)**0.5:
+                    msg2 = face
+
+        emotion = msg2.emotion
+
+        if emotion == 'Neutral':
+            goal = [0.0, 0.0, 0.0, 0.0]
+        elif emotion == 'Happy':
+            goal = [0.5, 0.0, 0.0, 0.0]
+        else:
+            goal = [0.0, 0.0, 0.0, 0.0]
+
+        self._action_client.wait_for_server()
         self.send_goal(goal)
 
     def send_goal(self, goal):

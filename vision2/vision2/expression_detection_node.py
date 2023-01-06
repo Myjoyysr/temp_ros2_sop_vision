@@ -77,7 +77,6 @@ class ExpressionDetection(Node):
             Faces, faces_details_topic, 10)
 
     def detect_expression(self, msg_face_imgs, msg_ids):
-        print("kek")
         msg_images = msg_face_imgs.face_images
         msg_face_info = msg_face_imgs.face_info
         msg_face_ids = msg_ids.faces
