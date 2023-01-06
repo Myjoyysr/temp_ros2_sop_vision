@@ -38,13 +38,10 @@ class Vision2ActionMsgs(Node):
         box_h = 0
         msg2 = msg1
         for face in msg1:
-            if not msg2:
+            temp = ((face.top_left.x-face.bottom_right.x)**2 +(face.top_left.x-face.bottom_right.x)**2)**0.5
+            if box_h < temp:
+                box_h = temp
                 msg2 = face
-                box_h = ((face.top_left.x-face.bottom_right.x)**2 +(face.top_left.x-face.bottom_right.x)**2)**0.5
-                print(box_h)
-            else:
-                if box_h < ((face.top_left.x-face.bottom_right.x)**2 +(face.top_left.x-face.bottom_right.x)**2)**0.5:
-                    msg2 = face
 
         emotion = msg2.emotion
 
