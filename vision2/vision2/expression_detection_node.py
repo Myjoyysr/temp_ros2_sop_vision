@@ -132,8 +132,9 @@ class ExpressionDetection(Node):
 
         i = 0
         if (len(faces_img_array) <= len(sorted_ids_coords)):
-            detected_round = False
+            #detected_round = False
             for face in faces_img_array:
+                detected_round = False
                 is_on_list = False
                 if len(expression_list) > 0:
                     for item in expression_list:
